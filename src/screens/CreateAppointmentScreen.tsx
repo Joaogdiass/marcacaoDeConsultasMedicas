@@ -35,7 +35,6 @@ interface Doctor {
   image: string;
 }
 
-// Lista de médicos disponíveis
 const availableDoctors: Doctor[] = [
   {
     id: '1',
@@ -69,6 +68,51 @@ const availableDoctors: Doctor[] = [
   },
 ];
 
+// Função para validar a data com limite de 1 ano
+const isValidFutureDate = (date: string): { valid: boolean; errorMessage: string } => {
+  const [day, month, year] = date.split('/').map(Number);
+  if (!day || !month || !year) {
+    return { valid: false, errorMessage: 'Data inválida. Verifique o formato DD/MM/AAAA.' };
+  }
+
+  if (month < 1 || month > 12) {
+    return { valid: false, errorMessage: 'Mês inválido. O mês deve estar entre 01 e 12.' };
+  }
+
+  const inputDate = new Date(year, month - 1, day);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const maxDate = new Date();
+  maxDate.setFullYear(today.getFullYear() + 1); // 1 ano a partir de hoje
+
+  if (inputDate <= today) {
+    return { valid: false, errorMessage: 'A data deve ser futura.' };
+  }
+
+  if (inputDate > maxDate) {
+    return { valid: false, errorMessage: 'Data não valida, marque em um dia antes.' };
+  }
+
+  return { valid: true, errorMessage: '' };
+};
+
+// Função para formatar enquanto digita (DD/MM/AAAA)
+const formatDate = (text: string): string => {
+  const cleaned = text.replace(/\D/g, '');
+  let formatted = '';
+
+  if (cleaned.length <= 2) {
+    formatted = cleaned;
+  } else if (cleaned.length <= 4) {
+    formatted = `${cleaned.slice(0, 2)}/${cleaned.slice(2)}`;
+  } else {
+    formatted = `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}/${cleaned.slice(4, 8)}`;
+  }
+
+  return formatted;
+};
+
 const CreateAppointmentScreen: React.FC = () => {
   const { user } = useAuth();
   const navigation = useNavigation<CreateAppointmentScreenProps['navigation']>();
@@ -84,7 +128,15 @@ const CreateAppointmentScreen: React.FC = () => {
       setError('');
 
       if (!date || !selectedTime || !selectedDoctor) {
-        setError('Por favor, preencha a data e selecione um médico e horário');
+        setError('Por favor, preencha a data e selecione um médico e horário.');
+        setLoading(false);
+        return;
+      }
+
+      const { valid, errorMessage } = isValidFutureDate(date);
+      if (!valid) {
+        setError(errorMessage);
+        setLoading(false);
         return;
       }
 
@@ -129,9 +181,24 @@ const CreateAppointmentScreen: React.FC = () => {
         <Input
           placeholder="Data (DD/MM/AAAA)"
           value={date}
-          onChangeText={setDate}
+          onChangeText={(text) => {
+            const formatted = formatDate(text);
+            setDate(formatted);
+
+            if (formatted.length === 10) {
+              const { valid, errorMessage } = isValidFutureDate(formatted);
+              if (!valid) {
+                setError(errorMessage);
+              } else {
+                setError('');
+              }
+            } else {
+              setError('');
+            }
+          }}
           containerStyle={styles.input}
           keyboardType="numeric"
+          maxLength={10}
         />
 
         <SectionTitle>Selecione um Horário</SectionTitle>
