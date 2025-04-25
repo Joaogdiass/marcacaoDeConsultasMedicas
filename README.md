@@ -53,7 +53,7 @@ src/
 🚀 COMO RODAR O PROJETO
 --------------------------------------------
 1. Clone o repositório:
-   https://github.com/Joaogdiass/marcacaoDeConsultasMedicas/
+  https://github.com/Joaogdiass/marcacaoDeConsultasMedicas.git
 
 2. Instale as dependências:
    npm install
